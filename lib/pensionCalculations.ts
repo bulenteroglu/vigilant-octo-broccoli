@@ -1,26 +1,106 @@
+import { PensionCalculationResult } from "./types";
+
+const CAREER_START_AGE = 25;
+const ANNUAL_INTEREST_RATE = 1.049;
+
 export function calculatePensionAtRetirement(
   desiredRetirementIncome: number,
   personalContribution: number,
   employerContribution: number,
   desiredRetirementAge: number
-): number {
-  const STARTING_AGE = 25;
-  const ANNUAL_INTEREST_RATE = 4.9;
-
-  const yearsOfContribution = desiredRetirementAge - STARTING_AGE;
+): PensionCalculationResult | null {
   const totalMonthlyContribution = personalContribution + employerContribution;
 
-  let pot = 0;
+  let currentAge = CAREER_START_AGE;
+  let pensionPot = 0;
 
-  for (let year = 0; year < yearsOfContribution; year++) {
-    // Calculate the total contribution for the year
-    pot += totalMonthlyContribution * 12;
+  const pensionGrowthHistory = [];
 
-    // Add 4.9% interest to the pot after calculating the total contribution for the year
-    pot *= 1 + ANNUAL_INTEREST_RATE / 100;
+  // Pension pot growth during working years
+  for (let year = CAREER_START_AGE; year < desiredRetirementAge; year++) {
+    pensionPot += totalMonthlyContribution * 12;
+    pensionPot *= ANNUAL_INTEREST_RATE;
+
+    pensionGrowthHistory.push({
+      year: year + 1,
+      potValue: pensionPot,
+    });
+    currentAge++;
   }
 
-  console.log(pot.toFixed(2));
+  const retirementDrawdown = calculatePensionRetirementProjection(
+    pensionPot,
+    desiredRetirementIncome,
+    currentAge
+  );
 
-  return pot;
+  const targetHistory = calculatePensionTargetHistory(
+    desiredRetirementIncome,
+    desiredRetirementAge,
+    totalMonthlyContribution
+  );
+
+  return {
+    pensionGrowthHistory,
+    targetHistory,
+    retirementDrawdown,
+  };
+}
+
+function calculatePensionRetirementProjection(
+  pensionPot: number,
+  desiredRetirementIncome: number,
+  currentAge: number
+) {
+  const retirementDrawdown = [];
+
+  while (pensionPot > 0) {
+    pensionPot -= desiredRetirementIncome;
+    retirementDrawdown.push({
+      year: currentAge + 1,
+      potValue: Math.max(0, pensionPot),
+    });
+    currentAge++;
+  }
+
+  return retirementDrawdown;
+}
+
+function calculatePensionTargetHistory(
+  desiredRetirementIncome: number,
+  desiredRetirementAge: number,
+  totalMonthlyContribution: number
+) {
+  const MAX_AGE = 81;
+
+  // Calculate the total amount needed for retirement
+  const yearsInRetirement = MAX_AGE - desiredRetirementAge + 1;
+  const totalRetirementNeeds = desiredRetirementIncome * yearsInRetirement;
+
+  const targetHistory = [];
+  let pensionPot = 0;
+  for (let age = CAREER_START_AGE; age <= MAX_AGE; age++) {
+    if (age < desiredRetirementAge) {
+      // During working years
+      pensionPot += totalMonthlyContribution * 12;
+      pensionPot *= ANNUAL_INTEREST_RATE;
+
+      // Calculate the target pot value needed at this age
+      const yearsLeft = desiredRetirementAge - age;
+      const targetPotValue =
+        totalRetirementNeeds / Math.pow(ANNUAL_INTEREST_RATE, yearsLeft);
+      pensionPot = Math.max(pensionPot, targetPotValue);
+    } else {
+      // During retirement years
+      // Math.max used to avoid negative value in result
+      pensionPot = Math.max(0, pensionPot - desiredRetirementIncome);
+    }
+
+    targetHistory.push({
+      year: age,
+      potValue: pensionPot,
+    });
+  }
+
+  return targetHistory;
 }
