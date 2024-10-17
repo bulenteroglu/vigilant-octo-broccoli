@@ -47,7 +47,7 @@ export function calculatePensionAtRetirement(
   };
 }
 
-function calculatePensionRetirementProjection(
+export function calculatePensionRetirementProjection(
   pensionPot: number,
   desiredRetirementIncome: number,
   currentAge: number
@@ -66,7 +66,7 @@ function calculatePensionRetirementProjection(
   return retirementDrawdown;
 }
 
-function calculatePensionTargetHistory(
+export function calculatePensionTargetHistory(
   desiredRetirementIncome: number,
   desiredRetirementAge: number,
   totalMonthlyContribution: number

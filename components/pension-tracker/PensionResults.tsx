@@ -12,7 +12,7 @@ const LineChart = ({
   results: PensionCalculationResult | null;
 }) => {
   if (!results) {
-    return null;
+    return <div>No results</div>;
   }
 
   // Get index of the highest year in the pension growth history, this way we can plot the drawdown line from the highest point
