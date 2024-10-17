@@ -6,6 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { pensionFormSchema } from "./schema";
 import { SubmitHandler, useForm } from "react-hook-form";
 import { Button } from "@/components/ui/button";
+import { calculatePensionAtRetirement } from "@/lib/pensionCalculations";
 
 export default function PensionForm({
   setFormData,
@@ -22,7 +23,21 @@ export default function PensionForm({
   });
 
   const onSubmit: SubmitHandler<PensionFormInputs> = (data) => {
+    const {
+      desiredRetirementIncome,
+      employerContribution,
+      personalContribution,
+      desiredRetirementAge,
+    } = data;
+
     setFormData(data);
+
+    calculatePensionAtRetirement(
+      desiredRetirementIncome,
+      employerContribution,
+      personalContribution,
+      desiredRetirementAge
+    );
   };
 
   return (
